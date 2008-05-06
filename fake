@@ -208,11 +208,11 @@ function parse_arguments {
   
   if [ "${FOREIGN_INTERFACE:-NULL}" != "NULL" ]; then
     check_set $FOREIGN_VARIABLES
-  fi
-  if [ "${FOREIGN_INTERFACE}" = "STATIC" ]; then
-    check_set $FOREIGN_STATIC_VARIABLES
-  else
-    check_set $FOREIGN_DYNAMIC_VARIABLES
+    if [ "${FOREIGN_INTERFACE}" = "STATIC" ]; then
+      check_set $FOREIGN_STATIC_VARIABLES
+    else
+      check_set $FOREIGN_DYNAMIC_VARIABLES
+    fi
   fi
 
   if [ "$GIVEN_IP" != "$SPOOF_IP" ]; then
