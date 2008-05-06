@@ -1,0 +1,14 @@
+usr/share/doc/fake/README
+usr/share/doc/fake/AUTHORS
+usr/share/doc/fake/changelog.gz
+usr/share/doc/fake/arp_fun.txt.gz
+usr/share/doc/fake/redundant_linux.txt.gz
+usr/share/doc/fake/203.12.97.7.cfg
+usr/share/doc/fake/192.168.89.19.cfg
+usr/sbin/send_arp
+usr/sbin/fake
+etc/fake/.fakerc
+etc/fake/clear_routers
+usr/lib/heartbeat/fake
+/usr/share/man/man8/fake.8
+/usr/share/man/man8/send_arp.8

@@ -1,0 +1,14 @@
+Source: fake
+Build-Depends: debhelper (>=4), patch
+Section: admin
+Priority: optional
+Maintainer: Simon Horman <horms@debian.org>
+Standards-Version: 3.6.1
+
+Package: fake
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: IP address takeover tool
+ Fake is a utility that enables the IP address be taken over by bringing up
+ a second interface on the host machine and using gratuitous arp. Designed
+ to switch in backup servers on a LAN.

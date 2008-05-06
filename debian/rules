@@ -1,0 +1,72 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+pwd:=$(shell pwd)
+
+build: build-stamp
+build-stamp:
+	dh_testdir
+	$(MAKE) patch all
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp
+
+	-$(MAKE) clean
+
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+
+	$(MAKE) \
+	  ROOT_DIR=$(pwd)/debian/tmp \
+	  MAN8_DIR=$(pwd)/debian/tmp/usr/share/man/man8/ \
+  	  install
+
+	mkdir -p $(pwd)/debian/tmp/usr/share/doc/fake
+	install -c -m 644 instance_config/192.168.89.19.cfg \
+	  $(pwd)/debian/tmp/usr/share/doc/fake/
+	install -c -m 644 instance_config/203.12.97.7.cfg \
+	  $(pwd)/debian/tmp/usr/share/doc/fake/
+	install -c -m 644 README $(pwd)/debian/tmp/usr/share/doc/fake/
+	install -c -m 644 AUTHORS $(pwd)/debian/tmp/usr/share/doc/fake/
+	install -c -m 644 ChangeLog \
+	  $(pwd)/debian/tmp/usr/share/doc/fake/changelog
+	gzip --best $(pwd)/debian/tmp/usr/share/doc/fake/changelog
+	install -c -m 644 docs/redundant_linux.txt \
+	  $(pwd)/debian/tmp/usr/share/doc/fake/
+	gzip --best \
+	  $(pwd)/debian/tmp/usr/share/doc/fake/redundant_linux.txt
+	install -c -m 644 docs/arp_fun.txt \
+	  $(pwd)/debian/tmp/usr/share/doc/fake/
+	gzip --best $(pwd)/debian/tmp/usr/share/doc/fake/arp_fun.txt
+
+	dh_movefiles --source=debian/tmp
+
+binary-indep: build install
+
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	dh_installdocs
+	dh_installchangelogs
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+	dh_makeshlibs
+	dh_installdeb
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install

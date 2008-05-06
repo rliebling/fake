@@ -1,0 +1,4 @@
+etc/fake
+etc/fake/instance_config
+var/run
+

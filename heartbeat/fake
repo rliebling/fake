@@ -1,0 +1,46 @@
+#!/bin/sh
+#
+# /etc/ha.d/resource.d/fake     - a heartbeat resource file
+#
+# We can pipe every output of fake to /dev/null because it appears
+# in the syslog, too.
+#
+ 
+set -u
+
+function usage () {
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+}
+ 
+if [ "$#" != 2 ]; then
+        usage;
+fi
+
+case "$2" in
+        start)
+                touch /var/run/fake.$1
+                nohup fake $1 >/dev/null 2>&1 &
+        ;;
+        stop)
+                rm -f /var/run/fake.$1
+                fake remove $1 >/dev/null 2>&1
+        ;;
+        restart)
+                $0 stop
+                $0 start
+        ;;
+        status)
+                if [ -f /var/run/fake.$1 ]; then
+                        echo running
+                else
+                        echo stopped
+                fi
+        ;;
+        *)
+                usage;
+        ;;
+esac
+
+exit 0
+# vim: ts=4

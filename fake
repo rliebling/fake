@@ -1,0 +1,416 @@
+#!/bin/bash -u
+############################################################
+# Fake               v 1.1.8                   February 2001
+# Horms                                   horms@verge.net.au
+#
+# Fake
+# Script to spoof an ip
+# Designed to create redundant servers
+# Copyright (C) 1998  Horms <horms@verge.net.au>
+# 
+# This program is free software; you can redistribute it
+# and/or modify it under the terms of the GNU General Public
+# License as published by the Free Software Foundation;
+# either version 2 of the License, or (at your option) any
+# later version.
+# 
+# This program is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied
+# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+# PURPOSE.  See the GNU General Public License for more
+# details.
+# 
+# You should have received a copy of the GNU General Public
+# License along with this program; if not, write to the Free
+# Software Foundation, Inc., 59 Temple Place, Suite 330,
+# Boston, MA 02111-1307 USA
+############################################################
+
+############################################################
+# Unset Locale
+############################################################
+
+unset LC_ALL
+unset LANG
+
+############################################################
+# Where the default config lies
+############################################################
+
+ETC_DIR="/etc/fake"
+
+############################################################
+# Check Real UserID is root
+############################################################
+
+function check_root {
+  if [ "$(id -ru)" != "0" ]; then
+    die Must be run by the super user
+  fi
+}
+
+
+############################################################
+# Source rc file
+############################################################
+
+function source_rc {
+  local RC_FILENAME="$1"
+  shift
+  local RC_DIRS="$1"
+  shift
+  local VARIABLES="$*"
+
+  local RC_FOUND="FALSE"
+
+  unset $VARIABLES
+
+  for i in $RC_DIRS; do
+    local RC_FILE="${i}/${RC_FILENAME}"
+    if [ -f "$RC_FILE" ]; then
+      log "Sourcing $RC_FILE";
+      RC_FOUND="TRUE"
+      source "$RC_FILE";
+    fi
+  done
+  
+  if [ "$RC_FOUND" = "FALSE" ]; then
+    die "No rc file \"$RC_FILENAME\" found in; $RC_DIRS"
+  fi
+
+  check_set $VARIABLES
+}
+
+
+############################################################
+# Check if variables are set
+############################################################
+
+function check_set {
+  local TMP
+
+  for i in $*; do
+    TMP=$(eval echo \${$i})
+    if [ "${TMP:-__NULL__}" = "__NULL__" ]; then
+      die "$i is not set in config file"
+    fi
+  done
+}
+
+############################################################
+# Log signal death
+############################################################
+
+function bail {
+  trap - EXIT
+  log "Signal received bailing..."
+  exit 1
+}
+
+
+############################################################
+# Log dying
+############################################################
+
+function die {
+  log "Fatal Error: $*"
+  exit 1
+}
+
+
+############################################################
+# Warn about something
+############################################################
+
+function warn {
+  log "Warning: $*"
+}
+
+
+############################################################
+# ignore signal
+############################################################
+
+function ignore {
+  log "Signal received ignoring..."
+}
+
+
+############################################################
+# shutdown_fake cleanly on signal
+############################################################
+
+function shutdown_fake {
+  trap - EXIT
+  log "Signal received shutting down..."
+  fake_off 1
+  exit
+}
+
+
+############################################################
+# Log messages with a timestamp
+############################################################
+
+function log {
+  echo $(date) fake[$$] $*
+  logger -t fake[$$] $*
+}
+
+
+############################################################
+# Ohh my thats a nice usage function
+############################################################
+
+function usage {
+cat<<__EOF__
+Usage: fake [remove] ip_addr
+           ip_addr: The ip address to spoof
+__EOF__
+exit 1
+} 1>&2
+
+
+############################################################
+# Parse arguments
+############################################################
+
+function parse_arguments {
+  REMOVE="FALSE"
+
+  local VARIABLES="IFCONFIG SPOOF_IP TARGET_INTERFACE"
+  local INTERFACE_VARIABLES="SPOOF_NETMASK SPOOF_BROADCAST"
+  local FOREIGN_VARIABLES="FOREIGN_ARP"
+  local FOREIGN_STATIC_VARIABLES="FOREIGN_MACADDR"
+  local FOREIGN_DYNAMIC_VARIABLES="FAKE_RSH FOREIGN_INTERFACE"
+  if [ $# -lt 1 ];then 
+    usage 
+  fi
+  local GIVEN_IP="$1"
+  shift
+
+  if [ "$GIVEN_IP" = "remove" ]; then
+    REMOVE="TRUE"
+    VARIABLES="SPOOF_IP TARGET_INTERFACE"
+    if [ $# -lt 1 ];then 
+      usage 
+    fi
+    GIVEN_IP="$1"
+  fi
+
+  INSTANCE_CONFIG_FILE="${GIVEN_IP}.cfg"
+
+  source_rc "$INSTANCE_CONFIG_FILE" "$INSTANCE_CONFIG_DIR" "$VARIABLES"
+
+  if [ "${IFCONFIG}" = "TRUE" ]; then
+    check_set $INTERFACE_VARIABLES
+  fi
+  
+  if [ "${FOREIGN_INTERFACE:-NULL}" != "NULL" ]; then
+    check_set $FOREIGN_VARIABLES
+  fi
+  if [ "${FOREIGN_INTERFACE}" = "STATIC" ]; then
+    check_set $FOREIGN_STATIC_VARIABLES
+  else
+    check_set $FOREIGN_DYNAMIC_VARIABLES
+  fi
+
+  if [ "$GIVEN_IP" != "$SPOOF_IP" ]; then
+    die "IP address \"$GIVEN_IP\" given as an argument does not match \$SPOOF_IP \"$SPOOF_IP\" in config file"
+  fi
+
+  PID_FILE="${PID_DIR}/fake.${SPOOF_IP}.pid"
+}
+
+############################################################
+# set_MACADDR
+# Get the mac address to use
+# A bit clumsy, but nevermind
+# usage: set_MACADDR interface
+# usage: set_MACADDR rsh_programme foreign_host interface
+#   sets MACADDR to the maccaddress of the interface
+############################################################
+
+function set_MACADDR(){
+  local INTERFACE RSH HOST
+
+  if [ $# -lt 2 ]; then
+    INTERFACE=$1
+  else
+    RSH=$1
+    HOST=$2
+    INTERFACE=$3
+  fi
+
+  MACADDR=$($RSH $HOST /sbin/ifconfig $INTERFACE  | \
+    fgrep $INTERFACE | sed \
+    's/^.*HWaddr \(..\):\(..\):\(..\):\(..\):\(..\):\(..\).*$/\1\2\3\4\5\6/')
+
+  if [ "${MACADDR:=NULL}" = "NULL" ]; then
+    log "Could not locate obtain hardware address for $TARGET_INTERFACE"
+  fi
+}
+
+
+############################################################
+# Turn fake on
+############################################################
+
+function fake_on(){
+  log "Turning Fake on."
+
+  # Tell the user what what is going on
+  log "$(hostname) being $SPOOF_IP"
+  
+  # Create pid file
+  PID_FILE="${PID_DIR}/fake.${SPOOF_IP}.pid"
+  if [ -f $PID_FILE ]; then
+    log "fake appears to be running: $PID_FILE was found: Killing."
+    kill -USR1 $(cat $PID_FILE)
+  fi
+
+  echo $$ > $PID_FILE || die "Could not write to pid file $PID_FILE"
+  
+  
+  if [ "${IFCONFIG}" = "TRUE" ]; then
+    # Setup the target interface, route  and send gratuitous arp
+    /sbin/ifconfig "$TARGET_INTERFACE" $SPOOF_IP netmask $SPOOF_NETMASK \
+      broadcast $SPOOF_BROADCAST \
+      || die "Could not bring up interface"
+    /sbin/route add -host $SPOOF_IP "$TARGET_INTERFACE" \
+      || warn "Could not add local route"
+  fi
+ 
+  # Get the mac address to use
+  set_MACADDR $TARGET_INTERFACE
+ 
+  #Send gratutious arp
+  log "Sending endless Gratuitous Arp."
+  while [ 1 ]; do
+    /usr/sbin/send_arp \
+		${SPOOF_IP} ${MACADDR} \
+		${SPOOF_IP} ${MACADDR} \
+		${TARGET_INTERFACE} ${MACADDR} FF:FF:FF:FF:FF:FF reply \
+       || die "Could not send gratuitous arp"
+    sleep $ARP_DELAY
+    /usr/sbin/send_arp \
+    		${SPOOF_IP} ${MACADDR} \
+		${SPOOF_IP} 00:00:00:00:00:00 \
+		${TARGET_INTERFACE} ${MACADDR} FF:FF:FF:FF:FF:FF request \
+       || die "Could not send gratuitous arp"
+    sleep $ARP_DELAY
+  done
+}  
+
+
+############################################################
+# Turn fake off
+############################################################
+
+function fake_off(){
+  local LAYER2_SRC_HW LAYER3_SNDR_HW
+
+  log "Turning Fake off."
+
+  #Our Spoofed ip
+  if [ "${IFCONFIG}" = "TRUE" ]; then
+    /sbin/ifconfig $TARGET_INTERFACE down
+  fi
+
+  #Kill existing fake
+  if [ -f $PID_FILE -a "$(cat $PID_FILE)" != $$ ]; then
+    log "fake appears to be running: $PID_FILE was found: Killing."
+    kill -USR1 $(cat $PID_FILE)
+    rm $PID_FILE || warn "Could not remove $PID_FILE"
+  fi
+
+  if [ "${FOREIGN_INTERFACE:-NULL}" != "NULL" ]; then
+    log "sending gratuitous arp of original mac address."
+    if [ "${FOREIGN_INTERFACE}" != "STATIC" ]; then
+    	set_MACADDR "$FAKE_RSH" "$SPOOF_IP" "$FOREIGN_INTERFACE"
+    else
+    	MACADDR=${FOREIGN_MACADDR}
+    fi
+
+    LAYER3_SNDR_HW=${MACADDR}
+    set_MACADDR $TARGET_INTERFACE
+    LAYER2_SRC_HW=${MACADDR}
+
+    while [ $FOREIGN_ARP -gt 0 ]; do
+      FOREIGN_ARP=$(($FOREIGN_ARP - 1))
+      /usr/sbin/send_arp \
+      		${SPOOF_IP} ${LAYER3_SNDR_HW} \
+                ${SPOOF_IP} ${LAYER3_SNDR_HW} \
+		${TARGET_INTERFACE} \
+		${LAYER2_SRC_HW} FF:FF:FF:FF:FF:FF reply \
+        || die "Could not send gratuitous arp"
+      sleep $ARP_DELAY
+      /usr/sbin/send_arp \
+      		${SPOOF_IP} ${LAYER3_SNDR_HW} \
+                ${SPOOF_IP} 00:00:00:00:00:00 \
+		${TARGET_INTERFACE} \
+		${LAYER2_SRC_HW} FF:FF:FF:FF:FF:FF request \
+        || die "Could not send gratuitous arp"
+      sleep $ARP_DELAY
+    done
+  fi
+ 
+}
+
+
+######################################################################
+# Some routers may need their arp cache cleared
+# Works with Cisco routers with rsh access
+######################################################################
+
+function clear_remote_arp_cache {
+  #See if the data file exists
+  if [ ! -f "$CLEAR_ROUTERS_FILE" ]; then
+    warn "could not open clear routers file $CLEAR_ROUTERS_FILE"
+    return
+  fi
+
+  #read in the routers
+  ROUTERS=$(<"$CLEAR_ROUTERS_FILE" sed 's/\#.*//' | tr '\012' ' '; echo)
+
+  #reset the routers in the background so it doesn't block
+  for ROUTER in $ROUTERS; do
+    CMD="rsh $ROUTER clear arp-cache"
+    log "$CMD"
+    { $CMD >& /dev/null || log "Error executing $CMD" ; } &
+  done
+}
+
+
+######################################################################
+# The main game
+######################################################################
+
+log "Starting with arguments: $@"
+
+#set some traps
+trap bail EXIT
+trap bail USR1
+trap shutdown_fake TERM
+trap shutdown_fake HUP
+
+#make sure we are root
+check_root
+
+#read rc file
+source_rc .fakerc "${ETC_DIR} ${HOME}" \
+  ARP_DELAY CLEAR_ROUTERS_FILE PID_DIR LOG_DIR INSTANCE_CONFIG_DIR
+
+#Check arguments
+parse_arguments $@
+
+#Looks ok so far so start by clearing the arp cache on some routers
+clear_remote_arp_cache
+
+#Do the deed
+if [ "$REMOVE" = "TRUE" ]; then
+  fake_off 0
+else
+  fake_on
+fi
+

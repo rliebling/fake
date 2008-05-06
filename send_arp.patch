@@ -1,0 +1,49 @@
+diff -uN send_arp.orig/Makefile send_arp/Makefile
+--- send_arp.orig/Makefile	Wed Dec 31 19:00:00 1969
++++ send_arp/Makefile	Thu Oct 29 15:40:47 1998
+@@ -0,0 +1,35 @@
++######################################################################
++# Makefile for send_arp                                   October 1998
++# horms                                             horms@vergenet.net
++#
++#
++# Freely distributable under the terms of the 
++# GNU General Public License
++#
++# Note: send_arp was written by:
++#         yuri volobuev'97
++#         volobuev@t1.chem.umn.edu
++#
++#
++# This make file is included to help automation of installation
++#
++######################################################################
++
++ROOT_DIR=
++SRC=send_arp.c
++BIN=send_arp
++BIN_DIR=$(ROOT_DIR)/usr/sbin
++
++.PHONY: all install clean
++
++all: $(BIN)
++
++$(BIN): $(SRC)
++	$(CC) $(SRC) -o $(BIN)
++
++clean:
++	rm -f $(BIN) core $(SRC).*
++
++install:
++	mkdir -p $(BIN_DIR)
++	cp $(BIN) $(BIN_DIR)
+diff -uN send_arp.orig/send_arp.c send_arp/send_arp.c
+--- send_arp.orig/send_arp.c	Thu Oct 29 15:56:46 1998
++++ send_arp/send_arp.c	Thu Oct 29 15:20:43 1998
+@@ -21,7 +21,6 @@
+ #include <errno.h>
+ #include <netdb.h>
+ #include <sys/socket.h>
+-#include <linux/in.h>
+ #include <arpa/inet.h>
+ #include <linux/if_ether.h>

@@ -1,0 +1,193 @@
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\" fake.8                                                 February 2001
+.\" Horms                                             horms@verge.net.au
+.\"
+.\" Fake
+.\" Script to spoof an ip
+.\" Designed to create redundant servers
+.\" Copyright (C) 1998  Horms <horms@verge.net.au>
+.\" 
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of the
+.\" License, or (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+.\" 02111-1307  USA
+.\"
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.TH FAKE 8 "17th February 2001"
+.SH NAME
+fake \- IP address takeover tool
+.SH SYNOPSIS
+\fBfake\fP [remove] ip_addr
+.SH DESCRIPTION
+\fBfake\fP is a simple utility designed to enable the switching in of
+backup servers by bringing up an additional interface
+and using arp spoofing to take over the ip address. Either
+additional physically or logical interfaces can be used.
+
+Variants of the script have been used extensively at Zip World,
+http://www.zipworld.com.au./ for backing up various servers
+including the mail, web and proxy servers. Please be aware that
+though this system has been shown to work you are well advised to
+test the system throughly before putting into production.
+
+Please see the docs directory for a more thorough discussion
+of the process that has been implemented and the issues surrounding
+its use.
+.SH OPTIONS
+.TP
+.B remove
+Stop the takover of an ip address. Default behaviour is to start a
+takeover.
+.TP
+.B ip_addr
+IP address to takeover.
+.SH GLOBAL CONFIGURATION FILE
+The global configuration file is in /etc/fake/.fakerc. The vales
+in here can be overridden by ${HOME}/.fakerc. A sample is included
+below;
+.nf
+--begin .fakerc--
+############################################################
+# Set up basic environment for fake
+# Variables are set as bash variables
+# i.e. <VARIABLE>=<value>
+#
+# Must set:
+#  ARP_DELAY: Delay in seconds between gratuitous arp
+#  PID_DIR: Directory where pid files are kept
+#  INSTANCE_CONFIG_DIR: Directory where specific
+#   configuration files for an IP address takeover are kept
+#  LOG_DIR: Directory where logs are kept
+#  CLEAR_ROUTERS_FILE: New line delimited list of routers to rsh
+#    to and execute "clear arp-cache"
+#  FAKE_RSH: Programme to use to "rsh" to another machine
+#    to obtain macaddress by running ifconfig
+#
+# PATH can be set here to ensure that send_arp is in the
+#  path
+############################################################
+
+FAKE_HOME="/etc/fake"
+
+#PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+ARP_DELAY=1
+CLEAR_ROUTERS_FILE="$FAKE_HOME/clear_routers"
+PID_DIR="$FAKE_HOME/run"
+LOG_DIR="$FAKE_HOME/log"
+INSTANCE_CONFIG_DIR="$FAKE_HOME/instance_config"
+
+#Only needed if you wish to send gretuitous arp
+#advertising the "real" mac address when turning fake off
+#FAKE_RSH=ssh
+
+
+--end .fakerc--
+.fi
+.SH INSTANCE CONFIGURATION
+To configure an instance of fake  create
+/etc/fake/instance_config/<ip-to-take-over>.cfg with the
+following format;
+.PP
+.nf
+SPOOF_IP=<ip-to-take-over>
+.fi
+.PP
+The SPOOF_IP must be the same as the IP in the name of the
+file as this is checked at run time to ensure that config files
+are edited and not just copied over each other. 
+.PP
+.nf
+IFCONFIG=TRUE|FALSE
+.fi
+.PP
+If set to TRUE, SPOOF_IP will be brought up on
+the TARGET_INTERFACE. If set to TRUE, SPOOF_NETMASK and TARGET_INTERFACE 
+must be defined.
+.PP
+.nf
+SPOOF_NETMASK=<broadcast-of-network-that-ip-to-take-over-is-on>
+TARGET_INTERFACE=<interface to bring up>
+.fi
+.PP
+It is very important that the TARGET_INTERFACE is different for
+each instance that you envisage running simultaneously.
+.PP
+Optionally if you wish to rsh to the main server and
+advertise the "real" mac address when turning fake off
+set the following;
+.PP
+.nf
+FOREIGN_INTERFACE=<interface-on-foerign-host-with-macaddress-to-use>
+FOREIGN_ARP=<number-of-arps-to-send-with-real-mac-address>
+.fi
+.PP
+To use this last feature in an automated fashion you will
+need to be ablt to $FAKE_RSH to $SPOOF_IP from the host that
+fake runs on without manual authintication. With rsh
+this is typically achived using .rhosts and with ssh
+a RSH key with an empty pass-prhase can be employed.
+.PP
+E.g. /etc/fake/instance_config/203.12.97.7.cfg
+.PP
+.nf
+SPOOF_IP=203.12.97.7
+IFCONFIG=TRUE
+SPOOF_NETMASK=255.255.255.0
+TARGET_INTERFACE=eth0:2
+FOREIGN_INTERFACE=eth0
+FOREIGN_ARP=5
+.fi
+.SH ACTIVATION
+To activate run: fake <ip-to-take-over> &
+.PP
+Logs will be made to the local0.notice syslog facility
+so you should look here for messages
+.PP
+Running "ifconfig" should show the new interface
+.PP
+Running "route" should show a route to the spoof ip to the
+new interface. This is only needed so the machine that fake
+is running on can communicate correctly to this ip address.
+.PP
+Running "tcpdump -i <interface> arp" should show the
+gratuitous arp packets.
+.SH DEACTIVATION
+To deactivate run: fake remove <ip-to-take-over>
+As of version 1.1.2 sending fake a SIGTERM or SIGHUP
+has the same effect as running fake remove <ip-to-take-over>.
+.PP
+Examination of syslog messages should show that the fake process
+have been shut down
+.PP
+ifconfig should show that the new interface has been removed
+.PP
+route should show that the new route has been removed
+.PP
+tcpdump should show that the gratuitous arp has stopped
+.B  Note: 
+Activating fake multiple times with the same
+arguments has the same effect as activating it once. Similarly
+deactivating fake multiple times with the same arguments has
+the same effect as deactivating it once.
+.SH FILES
+.TP
+\fC/etc/fake/.fakerc
+.TP
+\fC/etc/fake/clear_routers
+.TP
+\fC/etc/fake/instance_config/<ip_address>.cfg
+.TP
+\fC/var/run/fake.<ip_address>.pid
+.SH AUTHOR
+Horms <horms@verge.net.au>

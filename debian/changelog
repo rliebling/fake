@@ -1,0 +1,24 @@
+fake (1.1.9-1) unstable; urgency=low
+
+  * New Upstream
+    (closes: Bug#253129)
+
+ -- Simon Horman <horms@debian.org>  Tue,  8 Jun 2004 16:46:28 +0900
+
+fake (1.1.8-1) unstable; urgency=low
+
+  * Updated for 1.1.8
+    (closes: Bug#165318)
+
+ -- Simon Horman <horms@vergenet.net>  Mon, 21 Oct 2002 12:35:19 +0900
+
+fake (1.1.7) unstable; urgency=low
+
+  * A release
+
+ -- Simon Horman <horms@vergenet.net>  Mon,  7 Jan 2002 04:39:42 +1100
+
+Local variables:
+mode: debian-changelog
+End:
+eoch

@@ -1,0 +1,35 @@
+############################################################
+# Set up basic environment for fake
+# Variables are set as bash variables
+# i.e. <VARIABLE>=<value>
+#
+# Must set:
+#  ARP_DELAY: Delay in seconds between gratuitous arp
+#  PID_DIR: Directory where pid files are kept
+#  INSTANCE_CONFIG_DIR: Directory where specific 
+#   configuration files for an IP address takeover are kept
+#  LOG_DIR: Directory where logs are kept
+#  CLEAR_ROUTERS_FILE: New line delimited list of routers to rsh
+#    to and execute "clear arp-cache"
+#  FAKE_RSH: Programme to use to "rsh" to another machine
+#    to obtain macaddress by running ifconfig
+#
+# PATH can be set here to ensure that send_arp is in the 
+#  path
+############################################################
+
+FAKE_HOME="/etc/fake"
+
+#PATH=/sbin:/usr/sbin:/bin:/usr/bin
+
+ARP_DELAY=1
+CLEAR_ROUTERS_FILE="$FAKE_HOME/clear_routers"
+PID_DIR="/var/run"
+LOG_DIR="$FAKE_HOME/log"
+INSTANCE_CONFIG_DIR="$FAKE_HOME/instance_config"
+
+#Only needed if you wish to send gratuitous arp
+#advertising the "real" mac address when turning fake off
+#FAKE_RSH=ssh
+
+

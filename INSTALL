@@ -1,0 +1,19 @@
+fake
+INSTALL
+Horms <horms@verge.net.au>
+----------------------------------------------------------------------
+
+1. tar -zcf fake-<version>.tar.gz
+
+2. cd fake-<version>
+
+3. make patch && make && make install
+
+4. *** Very Important ***
+   On the machine that you are going to take over the IP address
+   of set up an additional interface so you can access that machine
+   while fake is in operation. This can be an additional
+   physical interface or an IP alias.
+
+5. See the fake(8) man page for details on configuration and running
+

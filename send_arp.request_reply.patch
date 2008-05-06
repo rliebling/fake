@@ -1,0 +1,54 @@
+--- send_arp.orig/send_arp.c	2004-06-08 12:28:24.000000000 +0900
++++ send_arp.orig/send_arp.c	2004-06-08 13:47:59.000000000 +0900
+@@ -29,14 +29,15 @@
+ #define ARP_FRAME_TYPE 0x0806
+ #define ETHER_HW_TYPE 1
+ #define IP_PROTO_TYPE 0x0800
+-#define OP_ARP_REQUEST 2
++#define OP_ARP_REQUEST 1
++#define OP_ARP_REPLY   2
+ 
+ #define DEFAULT_DEVICE "eth0"
+ 
+ char usage[]={"send_arp: sends out custom ARP packet. yuri volobuev'97\n\n\
+ usage: send_arp sndr_ip_addr sndr_hw_addr\n\
+                 targ_ip_addr targ_hw_addr\n\
+-                [targ_int [src_hw_addr [dest_hw_addr]]]\n\n"};
++                [[targ_int [src_hw_addr [dest_hw_addr] [request|reply]]\n\n"};
+ 
+ struct arp_packet {
+         u_char dest_hw_addr[ETH_HW_ADDR_LEN];
+@@ -67,7 +68,7 @@
+ char *c;
+ int n;
+ 
+-if(argc < 5 || argc > 8) die(usage);
++if(argc < 5 || argc > 9) die(usage);
+ 
+ sock=socket(AF_INET,SOCK_PACKET,htons(ETH_P_RARP));
+ if(sock<0){
+@@ -80,9 +81,22 @@
+ pkt.prot_type = htons(IP_PROTO_TYPE);
+ pkt.hw_addr_size = ETH_HW_ADDR_LEN;
+ pkt.prot_addr_size = IP_ADDR_LEN;
+-pkt.op=htons(OP_ARP_REQUEST);
+ 
+-if ( argc == 8 ) {
++if ( argc == 9 ) {
++	if (! strcasecmp("request", argv[8])) {
++		pkt.op=htons(OP_ARP_REQUEST);
++	}
++	else if (! strcasecmp("reply", argv[8])) {
++		pkt.op=htons(OP_ARP_REPLY);
++	}
++	else {
++		die("Invalid arp type. Must be \"request\" or \"reply\"");
++	}
++} else {
++	pkt.op=htons(OP_ARP_REQUEST);
++}
++
++if ( argc >= 8 ) {
+ 	get_hw_addr(pkt.dest_hw_addr,argv[7]);
+ } else {
+ 	get_hw_addr(pkt.dest_hw_addr,argv[4]);

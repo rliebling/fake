@@ -1,0 +1,85 @@
+--- send_arp.orig/send_arp.c	2002-10-21 14:19:27.000000000 +0900
++++ send_arp/send_arp.c	2002-10-21 14:25:03.000000000 +0900
+@@ -33,11 +33,13 @@
+ 
+ #define DEFAULT_DEVICE "eth0"
+ 
+-char usage[]={"send_arp: sends out custom ARP packet. yuri volobuev'97\n\
+-usage: send_arp src_ip_addr src_hw_addr targ_ip_addr targ_hw_addr [targ_int]\n\n"};
++char usage[]={"send_arp: sends out custom ARP packet. yuri volobuev'97\n\n\
++usage: send_arp sndr_ip_addr sndr_hw_addr\n\
++                targ_ip_addr targ_hw_addr\n\
++                [targ_int [src_hw_addr [dest_hw_addr]]]\n\n"};
+ 
+ struct arp_packet {
+-        u_char targ_hw_addr[ETH_HW_ADDR_LEN];
++        u_char dest_hw_addr[ETH_HW_ADDR_LEN];
+         u_char src_hw_addr[ETH_HW_ADDR_LEN];
+         u_short frame_type;
+         u_short hw_type;
+@@ -47,8 +49,8 @@
+         u_short op;
+         u_char sndr_hw_addr[ETH_HW_ADDR_LEN];
+         u_char sndr_ip_addr[IP_ADDR_LEN];
+-        u_char rcpt_hw_addr[ETH_HW_ADDR_LEN];
+-        u_char rcpt_ip_addr[IP_ADDR_LEN];
++        u_char targ_hw_addr[ETH_HW_ADDR_LEN];
++        u_char targ_ip_addr[IP_ADDR_LEN];
+         u_char padding[18];
+ };
+ 
+@@ -58,14 +60,14 @@
+ 
+ int main(int argc,char** argv){
+ 
+-struct in_addr src_in_addr,targ_in_addr;
++struct in_addr sndr_in_addr,targ_in_addr;
+ struct arp_packet pkt;
+ struct sockaddr sa;
++int sock;
+ char *c;
+ int n;
+-int sock;
+ 
+-if(argc != 5 && argc !=6)die(usage);
++if(argc < 5 || argc > 8) die(usage);
+ 
+ sock=socket(AF_INET,SOCK_PACKET,htons(ETH_P_RARP));
+ if(sock<0){
+@@ -80,20 +82,30 @@
+ pkt.prot_addr_size = IP_ADDR_LEN;
+ pkt.op=htons(OP_ARP_REQUEST);
+ 
++if ( argc == 8 ) {
++	get_hw_addr(pkt.dest_hw_addr,argv[7]);
++} else {
++	get_hw_addr(pkt.dest_hw_addr,argv[4]);
++}
++
++if ( argc >= 7 ) {
++	get_hw_addr(pkt.src_hw_addr,argv[6]);
++} else {
++	get_hw_addr(pkt.src_hw_addr,argv[2]);
++}
++
+ get_hw_addr(pkt.targ_hw_addr,argv[4]);
+-get_hw_addr(pkt.rcpt_hw_addr,argv[4]);
+-get_hw_addr(pkt.src_hw_addr,argv[2]);
+ get_hw_addr(pkt.sndr_hw_addr,argv[2]);
+ 
+-get_ip_addr(&src_in_addr,argv[1]);
++get_ip_addr(&sndr_in_addr,argv[1]);
+ get_ip_addr(&targ_in_addr,argv[3]);
+ 
+-memcpy(pkt.sndr_ip_addr,&src_in_addr,IP_ADDR_LEN);
+-memcpy(pkt.rcpt_ip_addr,&targ_in_addr,IP_ADDR_LEN);
++memcpy(pkt.sndr_ip_addr,&sndr_in_addr,IP_ADDR_LEN);
++memcpy(pkt.targ_ip_addr,&targ_in_addr,IP_ADDR_LEN);
+ 
+ bzero(pkt.padding,18);
+ 
+-if (argc!=6) {
++if (argc==5) {
+         strcpy(sa.sa_data,DEFAULT_DEVICE);
+ } else {
+        if ((c=strchr(argv[5], ':'))) {

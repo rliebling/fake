@@ -1,0 +1,6 @@
+######################################################################
+# List of routers to rsh to and run "clear arp-cache"
+# Anything including and after a # on a line is ignored
+######################################################################
+
+#rocket

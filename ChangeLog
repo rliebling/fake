@@ -1,0 +1,177 @@
+fake 
+Horms <horms@verge.net.au>
+Change Log
+----------------------------------------------------------------------
+
+8th June 2004
+(Horms)
+
+        * Version 1.1.9
+        - send gratuitous arp replies as well as requests
+	- try to send gratuitous arp in accordance with rfc 2002 (4.9)
+        - minor documentation update
+
+
+----------------------------------------------------------------------
+
+21st October 2002
+(Horms)
+
+        * Version 1.1.8
+        - moved binaries to /usr/sbin (Patrick Koppen)
+        - removed Obsoletes and Docdir from specfile (Patrick Koppen)
+        - moved 'make patch' from %setup to %build
+          (otherwise rpm -bp won't work) (Patrick Koppen)
+        - added MAN8_DIR=... in %install to use %{_mandir} (Patrick Koppen)
+        - removed %post and %postun (Patrick Koppen)
+        - moved 203.12.97.7.cfg from etc to doc (Patrick Koppen)
+        - changed send_arp.8 and send_arp.patch (Patrick Koppen)
+          send_arp now handles different layer2/3 adresses (Patrick Koppen)
+	- Make sure "LANG" environment variable is not set
+	  (Christian Hammers)
+	- Added heartbeat resource script for fake (Christian Hammers)
+
+
+----------------------------------------------------------------------
+
+7th January 2002
+(Horms)
+
+        * Version 1.1.7
+        - send up takes notice of TARGET_INTERFACE directive
+	  "William Jordan" <william.jordan@vonage.com>
+          
+
+----------------------------------------------------------------------
+
+19th February 2001
+(Horms)
+
+        * Version 1.1.6
+        - Cleaned up handling of Locale
+	- Added Man Pages
+	- Created Debian Packages
+	- Moved pid files from /etc/fake/run/<ip>.pid to
+	  /var/run/fake.<ip>.pid
+          
+
+----------------------------------------------------------------------
+
+22nd November 1999
+(Horms)
+
+        * Version 1.1.5
+          Translated contacts from zipworld to vergenet
+          
+
+----------------------------------------------------------------------
+
+14th November 1999
+(Horms)
+
+        * Version 1.1.4
+        - Setting locale to other than english caused mac
+          address determination to fail.
+          
+
+----------------------------------------------------------------------
+
+22nd September 1999
+(Horms)
+
+        * Version 1.1.3
+        - Running a second instance of fake for the same
+          instance-configuration caused the second instance
+          to signal the first which in turn signalled the
+          second instance to shutdown. USR1 is now used for
+          fake to tell other intances to exit without cleaning 
+          up to avoid this problem.
+
+----------------------------------------------------------------------
+
+15th May 1999
+(Horms)
+
+        * Version 1.1.2
+        - SIGHUP and SIGTERM now cause fake to clean  up and exit.
+          Previously SIGHUP was ignored and SIGTERM caused
+          fake to log that it was exiting and exit without
+          cleaning up. This alows fake to be nicely killed
+          by signals as well as by running "fake remove".
+          Thanks to Tom Vogt <tv@wlwonline.de> for suggesting
+          this as part of his Heart package.
+
+----------------------------------------------------------------------
+
+12th February 1999
+(Horms)
+
+        * Version 1.1.1
+        - Made Bash 2.0 compliant
+
+----------------------------------------------------------------------
+
+6th January 1999
+(Horms)
+
+        * Version 1.1.0
+        - Added funtianality to allow "real" mac address
+          to be advertised using gratuitous arp as fake
+	  is turned off. The mac address is dynamically discovred
+	  by running ifconfig on the foreign host. This elimiates
+	  the problem of configureing a mac address that becomes
+	  obselete and causeing netowrk weirdness.
+
+----------------------------------------------------------------------
+
+30th November 1998
+(Horms)
+
+	* Version 1.0.2
+        - SPOOF_BROADCAST added to config to allow broadcast
+	  to be set correctly as ifconfig often guesses wrong
+
+----------------------------------------------------------------------
+
+4rd November 1998
+(Horms)
+
+	* Version 1.0.1 
+        - Parsing of MAC address from invocation of ifconfig
+	  is now tollerent to trailing whitespace
+
+----------------------------------------------------------------------
+
+29th October 1998
+(Horms) 
+
+        * Version 1.0.0
+        - First public release
+	- Reads all information from config_file 
+	- Logs to syslog
+	- Checks that uid = 0
+
+----------------------------------------------------------------------
+
+29th July 1998
+(Horms)
+
+	- Does not send arp when shutting down to avoid the possibility
+	  of mac address hijacking due to misconfiguration
+
+----------------------------------------------------------------------
+
+30th March 1998
+(Horms)
+
+	- Catches HUP, logs and doesn't terminate Catches EXIT, 
+	  logs and exits
+	  Puts timestamps on logs
+
+----------------------------------------------------------------------
+
+12th January 1998
+(Horms)
+
+        - Set up route to spoofed ip on target interface.
+

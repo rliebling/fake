@@ -1,0 +1,31 @@
+fake
+README
+Horms <horms@verge.net.au>
+----------------------------------------------------------------------
+
+
+Overview
+--------
+
+fake is a simple utility designed to enable the switching in of
+backup servers buy bringing up an additional interface
+and using arp spoofing to take over the ip address. Either
+additional physically or logical interfaces can be used.
+
+Variants of the script have been used extensively at Zip World,
+http://www.zipworld.com.au./ for backing up various servers
+including the mail, web and proxy servers. Please be aware that
+though this system has been shown to work you are well advised to
+test the system throughly before putting into production.
+
+Please see the docs directory for a more thorough discussion
+of the process that has been implemented and the issues surrounding
+its use.
+
+send_arp was written by  yuri volobuev'97 <volobuev@t1.chem.umn.edu> 
+and is included here for convenience with his permission.
+The primary site for all other materials relating to this is
+http://vergenet.net/linux/fake/. 
+
+For more information on configuring and running fake please see the 
+fake(8) man page.

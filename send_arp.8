@@ -1,0 +1,68 @@
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.\" send_arp.8                                             February 2001
+.\" Horms                                             horms@verge.net.au
+.\"
+.\" send_arp
+.\" Send out one ARP packet with source/target IP and Ethernet
+.\" hardware addresses suuplied by the user
+.\" Copyright (C) 1997  Yuri Volobuev <volobuev@t1.chem.umn.edu>
+.\" 
+.\" This program is free software; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of the
+.\" License, or (at your option) any later version.
+.\" 
+.\" This program is distributed in the hope that it will be useful, but
+.\" WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+.\" General Public License for more details.
+.\" 
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+.\" 02111-1307  USA
+.\"
+.\""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+.TH SEND_ARP 8 "30th October 2003"
+.SH NAME
+send_arp \- Send out one ARP packet with source/target IP and Ethernet
+hardware addresses suuplied by the user.
+.SH SYNOPSIS
+\fBsend_arp\fP sndr_ip_addr sndr_hw_addr targ_ip_addr targ_hw_addr [src_int [src_hw_addr [dest_hw_addr]]]
+.SH DESCRIPTION
+\fBsend_arp\fP 
+This program sends out one ARP packet with source/target IP and Ethernet
+hardware addresses suuplied by the user.  It compiles and works on Linux
+and will probably work on any Unix that has SOCK_PACKET.
+.P
+The idea behind this program is a proof of a concept, nothing more.  It
+comes as is, no warranty.  However, you're allowed to use it under one
+condition: you must use your brain simultaneously.  If this condition is
+not met, you shall forget about this program and go RTFM immediately.
+.SH OPTIONS
+.TP
+.B sndr_ip_addr
+Sender IP address for ARP packet.
+.TP
+.B sndr_hw_addr
+Sender Hardware address for ARP packet.
+.TP
+.B targ_ip_addr
+Target IP address for ARP packet.
+.TP
+.B targ_hw_addr
+Target Hardware address for ARP packet.
+.TP
+.B src_int
+Source Interface for ARP packet.
+.TP
+.B src_hw_addr
+Source layer2 Hardware address for ARP packet.
+.TP
+.B dest_hw_addr
+Destination layer2 Hardware address for ARP packet.
+.SH AUTHORS
+.nf
+send_arp - Yuri Volobuev <volobuev@t1.chem.umn.edu>
+man page - Horms <horms@verge.net.au>
+layer2 patch - Patrick Koppen <patrick@koppen.de>
